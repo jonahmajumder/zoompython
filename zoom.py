@@ -1,5 +1,7 @@
 import subprocess
 from urllib import parse
+from urllib.parse import parse_qs
+from pathlib import Path
 
 class Meeting():
     '''
@@ -17,6 +19,7 @@ class Meeting():
     password
 
     '''
+
 
     SCHEME = 'zoommtg'
     PARAMS = ['confno', 'zc', 'browser', 'uname', 'stype', 'sid', 'pwd']
@@ -39,6 +42,7 @@ class Meeting():
         self.stype = stypedict.get(kwargs.get('accounttype'))
         self.sid = kwargs.get('hostid')
         self.pwd = kwargs.get('password')
+        self.pwd = kwargs.get('pwd')
 
     def _make_url(self, action):
         querydict = {k:getattr(self, k) for k in self.PARAMS if getattr(self, k) is not None}
@@ -60,6 +64,19 @@ class Meeting():
     def join(self):
         u = self._make_url('join')
         self._follow_url(u)
+
+    @staticmethod
+    def from_http(http_url):
+        parts = parse.urlparse(http_url)
+        assert parts.scheme == 'http' or parts.scheme == 'https'
+
+        loc = parts.netloc
+        meeting = Path(parts.path).name
+
+        params = parse_qs(parts.query)
+        params = {k:v[0] for (k,v) in params.items()}
+
+        return Meeting(location=loc, confno=meeting, zc=0, **params)
 
 
 
